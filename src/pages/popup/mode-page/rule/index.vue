@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import $store from '@/store';
-import { callBGFun, registerBGFun } from '@/utils/BGServerRegister';
 import {debounce} from '@/utils/utils';
 import {importRules,exportAsFile} from '@/utils/import-export';
-const { setStorePlus } = $store.BGS.requestFunKeys;
-const {CONFIG_KEY} = $store.common.cacheKeys
 const defaultConfig = $store.common.defaultConfig
+
 const page = ref({
     num: 1,
     size: 30,
@@ -23,19 +21,18 @@ const page = ref({
     },
     async refreshList() {
         let rules = await $store.common.rules();
+        console.log("删除后查",rules)
         // 应用keyword
         if (this.keyword.length > 0) {
             rules = rules.filter(_rule => _rule.includes(this.keyword));
         }
         page.value.total = rules.length;
         const maxPageNum = this.maxPageNum = Math.ceil(this.total / this.size);
-        if (this.num > maxPageNum) {
+        if (rules.length !== 0 && this.num > maxPageNum) {
             this.num = maxPageNum;
             return;
         }
-        console.log(0,page.value.num * page.value.size)
         this.list = rules.slice(0, page.value.num * page.value.size);
-        console.log('list=',this.list)
     },
     nextPage() {
         page.value.num++;
@@ -83,7 +80,8 @@ const rules = ref({
     async del(rule:string) {
         let rules = await $store.common.rules();
         rules = rules.filter(_rule => _rule !== rule);
-        $store.common.saveRules(rules);
+        await $store.common.saveRules(rules);
+        console.log('删除成功',page.value.list)
         page.value.resetPage();
     },
     chooseFile() {
@@ -153,7 +151,7 @@ onMounted(async () => {
         </div>
         <input type="file" id="fileInput" style="display: none;" ref="fileInputRef" @change="rules.import" />
         <div class="rule-info">
-            <p id="msg">满足以下规则(<span class="ruleCount"></span>条)，将自动清理！
+            <p id="msg">满足以下规则(<span class="ruleCount">{{ page.total }}</span>条)，将自动清理！
             </p>
             <p class="operation">
                 <span id="search-rule" title="规则搜索" @click="page.isShowSearch = !page.isShowSearch">查找</span> | <span id="import" title="去重导入" @click="rules.chooseFile()">导入</span> | <span
@@ -181,6 +179,7 @@ onMounted(async () => {
 .page {
     width: 310px;
     margin: 0;
+    color: #828282;
 }
 
 
@@ -215,7 +214,6 @@ onMounted(async () => {
     align-items: stretch;
     justify-content: space-around;
     font-weight: 700;
-    color: #a2a2a2;
 }
 
 .input-desc {
@@ -241,7 +239,6 @@ onMounted(async () => {
     .item {
         border-radius: 0px;
         background-color: #e8e8e8;
-        color: #a2a2a2;
         font-weight: 700;
         padding: 3px 5px;
         display: flex;
@@ -260,6 +257,7 @@ onMounted(async () => {
             width: 90%;
             overflow: hidden;
             font-size: 14px;
+            color: #a2a2a2;
         }
 
         .del-btn {
@@ -276,33 +274,25 @@ onMounted(async () => {
         width: 100%;
         text-align: center;
         font-size: 12px;
-        color: #a2a2a2;
     }
 
     .completed {
         width: 100%;
         text-align: center;
         font-size: 12px;
-        color: #a2a2a2;
         margin: 0 0;
     }
 
 
 }
 
-
-
 #show::-webkit-scrollbar {
     width: 0px;
     background: transparent;
 }
 
-
-
-
-
 .rule-info {
-    color: #3c3c3c;
+    color: #252525;
     display: flex;
     justify-content: space-between;
     margin-bottom: 5px;

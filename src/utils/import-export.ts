@@ -48,31 +48,16 @@ function importRules(files: File[] | null) {
 
 async function exportAsFile(text: string, fileName: string) {
   console.log("导出为文件");
-  if (URL) {
-    console.log("导出为文件");
-    // 将文本转换为 Blob
-    const blob = new Blob([text], { type: "application/json;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    // 使用 chrome.downloads API
-    await chrome.downloads.download({
-      url: url,
-      filename: fileName,
-      saveAs: false, // 是否弹出保存对话框
-    });
-    // 释放内存
-    URL.revokeObjectURL(url);
-  } else {
-    // 使用document.createElement("a")下载文件
-    const dataUri =
-      "data:application/json;charset=utf-8," + encodeURIComponent(text);
+  // 使用document.createElement("a")下载文件
+  const dataUri =
+    "data:application/json;charset=utf-8," + encodeURIComponent(text);
 
-    const linkElement = document.createElement("a");
-    linkElement.setAttribute("href", dataUri);
-    linkElement.setAttribute("download", fileName);
-    document.body.appendChild(linkElement); // 兼容 Firefox
-    linkElement.click();
-    document.body.removeChild(linkElement);
-  }
+  const linkElement = document.createElement("a");
+  linkElement.setAttribute("href", dataUri);
+  linkElement.setAttribute("download", fileName);
+  document.body.appendChild(linkElement); // 兼容 Firefox
+  linkElement.click();
+  document.body.removeChild(linkElement);
 }
 
 export { importRules, exportAsFile };

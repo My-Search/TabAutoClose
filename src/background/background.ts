@@ -6,6 +6,19 @@ import $store from "@/store/index";
 import { register } from "./BGServiceFun";
 import "./dataMigration";
 
+// chrome.runtime.onInstalled.addListener(async (details) => {
+//   if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
+//     // fiset install open welcome(当扩展首次安装打开欢迎页面)
+//     chrome.tabs.create({
+//       url: "src/pages/welcome/index.html",
+//     });
+//   } else if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
+//     // chrome version  update
+//   }
+//   // uninstall open page
+//   chrome.runtime.setUninstallURL("https://google.com/");
+// });
+
 // 传入tab通过ruleList过滤返回过滤后的ruleList
 function matchUrlPromise(
   tabList: chrome.tabs.Tab[],
@@ -34,7 +47,7 @@ let closeTimerOperator = {
       text: `${this.sessionCloseHistory.length}`,
     });
     chrome.action.setBadgeBackgroundColor({ color: "#259646" });
-    chrome.action.setBadgeTextColor({ color: "#8b0000" });
+    chrome.action.setBadgeTextColor({ color: "#F0F0F0" });
   },
   getSessionCloseHistory() {
     return this.sessionCloseHistory;

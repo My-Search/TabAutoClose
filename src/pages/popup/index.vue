@@ -5,13 +5,23 @@ import Button from '@/components/button/index.vue';
 import {callBGFun} from '@/utils/BGServerRegister'
 import $store from '@/store'
 
-
 const modules = [
-  { name: 'rule', label: '规则管理' },
-  { name: 'history', label: '清理记录' },
+  { name: 'rule', label: '规则管理' , icon: 'set',  isQuickly: true, default: true },
+  { name: 'history', label: '清理记录', icon: 'history', isQuickly: true },
 ];
 
-const currentMode = ref<string | null>(null);
+function findDefaultModule() {
+  // 使用for循环
+  for(let module of modules) {
+    if(module.default) {
+      return module
+    }
+  }
+  // 没有找到就让第一个作为默认项
+  return modules[0] || {}
+}
+
+const currentMode = ref<string | null>(findDefaultModule()?.name);
 
 // 动态加载组件
 const getModeComponent = (modeName: string) => {
@@ -21,10 +31,6 @@ const getModeComponent = (modeName: string) => {
 const selectMode = (modeName: string) => {
   currentMode.value = modeName;
 };
-
-const resetMode = () => {
-  currentMode.value = null;
-};
 function moduleOf(name: string) {
   return modules.find(item => item.name === name)
 }
@@ -32,13 +38,13 @@ onMounted(async () => {
   const sessionCloseHistory = await callBGFun($store.BGS.requestFunKeys.getSessionCloseHistory);
   console.log("sessionCloseHistory=",sessionCloseHistory);
   if(sessionCloseHistory.length > 0) {
-    currentMode.value = 'history'
+    selectMode('history')
   }
 })
 </script>
 
 <template>
-  <div>
+  <div id="popup-page">
     <!-- 模式选择界面 -->
     <div v-if="currentMode === null" class="mode-select">
       <div v-for="module in modules" :key="module.name">
@@ -50,7 +56,12 @@ onMounted(async () => {
     <div class="mode-view" v-else>
       <view class="mode-view-header">
         <span class="title">{{ moduleOf(currentMode)?.label }}</span>
-        <SvgIcon name="home" color="red" @click="resetMode" class="home" width="20px"></SvgIcon>
+        <div class="menus">
+          <template v-for="quickly of modules.filter(e => e.isQuickly)">
+            <SvgIcon :name="quickly.icon" color="#666666" @click="selectMode(quickly.name)" v-if="currentMode !== quickly.name"></SvgIcon>
+          </template>
+          <!-- <SvgIcon name="home"  @click="currentMode = null" width="20px"></SvgIcon> -->
+        </div>
       </view>
       <!-- 动态加载组件 -->
       <component :is="getModeComponent(currentMode)" />
@@ -59,6 +70,21 @@ onMounted(async () => {
 </template>
 
 <style scoped lang="scss">
+#popup-page::before {
+    background: url('@/assets/image/leaf.webp') no-repeat;
+    background-size: cover;
+    background-repeat: repeat-x;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    filter: blur(2px);
+    content: "";
+    z-index: -100;
+    opacity: 0.2;
+}
+
 .mode-select {
   display: flex;
   flex-wrap: nowrap;
@@ -78,19 +104,25 @@ onMounted(async () => {
   padding: 5px 10px;
   .mode-view-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     .title {
       font-weight: bold;
       margin: 20px 0;
-      background: #fff;
-      color: #777777;
+      color: #4f4f4f;
       text-shadow: 3px 3px #cfcfcf;
       font-size: 15px;
     }
-    .home {
-      cursor: pointer;
+    .menus {
+      display: flex;
+      flex-wrap: nowrap;
+      > * {
+        cursor: pointer;
+        margin-left: 10px;
+        color: #666666;
+      }
     }
+ 
   }
 
 }
