@@ -40,8 +40,26 @@ function matchUrlPromise(
 
 let closeTimerOperator = {
   timers: {} as { [key: number]: NodeJS.Timeout },
-  sessionCloseHistory: [] as chrome.tabs.Tab[],
-  addSessionCloseHistory(tabId: number) {
+  sessionCloseNumber: 0,
+  // 自增关闭历史记录数量
+  async plusOneSessionCloseNumber() {
+    return (this.sessionCloseNumber = (await this.getSessionCloseNumber()) + 1);
+  },
+  async getSessionCloseNumber(): Promise<number> {
+    const that = this;
+    return new Promise(async (resolve, reject) => {
+      if (that.sessionCloseNumber === 0) {
+        // 为什么需要在这里获取，因为插件因浏览器机制，会自己关闭，而插件icon上的数字不会清除，需要从此获取状态
+        that.sessionCloseNumber = await new Promise((_resolve) => {
+          chrome.action.getBadgeText({}, (text) =>
+            _resolve(text.length > 0 ? parseInt(text) : 0)
+          );
+        });
+      }
+      resolve(that.sessionCloseNumber);
+    });
+  },
+  onTabClose(tabId: number) {
     const that = this;
     return new Promise((resolve, reject) => {
       chrome.tabs.get(tabId, async function (tab) {
@@ -55,9 +73,9 @@ let closeTimerOperator = {
             title: that.clearTitleTime(tab.title!),
             favIconUrl: tab.favIconUrl,
           } as chrome.tabs.Tab);
-          that.sessionCloseHistory.push(tab);
+
           chrome.action.setBadgeText({
-            text: `${that.sessionCloseHistory.length}`,
+            text: `${await that.plusOneSessionCloseNumber()}`,
           });
           chrome.action.setBadgeBackgroundColor({ color: "#259646" });
           chrome.action.setBadgeTextColor({ color: "#F0F0F0" });
@@ -67,9 +85,6 @@ let closeTimerOperator = {
         resolve(true);
       });
     });
-  },
-  getSessionCloseHistory() {
-    return this.sessionCloseHistory;
   },
   async getCloseDelayed() {
     return await $store.common.getDelayed();
@@ -95,16 +110,15 @@ let closeTimerOperator = {
     }
     // 初始设置剩余时间
     setRemainder(waitTime);
-    this.timers[tabId] = setInterval(async () => {
+    this.timers[tabId] = setInterval(() => {
       // 剩余时间改变动态显示
       setRemainder(--waitTime!);
       // 关闭标签的定时器
       if (waitTime <= 0) {
         clearInterval(that.timers[tabId]);
-        delete that.timers[tabId];
-        await that.addSessionCloseHistory(tabId);
-        console.log("删除标签");
         chrome.tabs.remove(tabId);
+        delete that.timers[tabId];
+        that.onTabClose(tabId);
       }
     }, 1000);
   },
@@ -235,5 +249,5 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 // 注册渲染程序需要调用的服务
 register({
   debounceRefreshState: () => debounceRefreshState(true),
-  getSessionCloseHistory: () => closeTimerOperator.getSessionCloseHistory(),
+  getSessionCloseNumber: () => closeTimerOperator.getSessionCloseNumber(),
 });

@@ -35,9 +35,16 @@ function moduleOf(name: string) {
   return modules.find(item => item.name === name)
 }
 onMounted(async () => {
-  const sessionCloseHistory = await callBGFun($store.BGS.requestFunKeys.getSessionCloseHistory);
-  console.log("sessionCloseHistory=",sessionCloseHistory);
-  if(sessionCloseHistory.length > 0) {
+  // chrome.action.getBadgeText({}, function(text) {
+  //   console.log("当前徽章文本是:", text);
+  //   // 你可以在这里使用 text 的值
+  //   if(text) selectMode('history');
+  // });
+  console.log('渲染程序准备获取sessionCloseHistory')
+  const sessionCloseNumber = await callBGFun($store.BGS.requestFunKeys.getSessionCloseNumber);
+  console.log("渲染程序获取到的sessionCloseHistory=",sessionCloseNumber);
+  if(sessionCloseNumber > 0) {
+    console.log('打开的是历史页')
     selectMode('history')
   }
 })
@@ -72,6 +79,7 @@ onMounted(async () => {
 </template>
 
 <style scoped lang="scss">
+
 #popup-page::before {
     background: url('@/assets/images/leaf-end.webp') no-repeat;
     background-size: cover;

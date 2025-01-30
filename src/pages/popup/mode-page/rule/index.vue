@@ -146,7 +146,7 @@ onMounted(async () => {
             <div class="config-item">
                 <input type="text" id="rule" placeholder="输入规则..." v-model="form.rule" @keydown.enter="form.saveFormData()" />
                 <div>
-                    <button id="push" class="custom-button" @click="form.saveFormData()">添加配置</button>
+                    <button id="push" class="custom-button" @click="form.saveFormData()">添加规则</button>
                 </div>
             </div>
             <div class="config-item">
@@ -193,7 +193,7 @@ onMounted(async () => {
 .page {
     width: 310px;
     margin: 0;
-    color: #828282;
+    color: #303030;
 }
 
 

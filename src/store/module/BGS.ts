@@ -2,7 +2,7 @@ const requestFunKeys = {
   setStorePlus: "setStorePlus",
   refreshDelayedValue: "refreshDelayedValue",
   debounceRemoveRules: "debounceRemoveRules",
-  getSessionCloseHistory: "getSessionCloseHistory",
+  getSessionCloseNumber: "getSessionCloseNumber",
 };
 
 export default { requestFunKeys };

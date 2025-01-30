@@ -9,7 +9,7 @@ const { requestFunKeys } = $store.BGS;
 
 function register({
   debounceRefreshState,
-  getSessionCloseHistory,
+  getSessionCloseNumber,
 }: RegisterBGSType) {
   // -- 防抖方式删除规则-让前台调用--
   const waitRemoveRules: string[] = [];
@@ -57,7 +57,7 @@ function register({
   }
   registerBGFun(requestFunKeys.setStorePlus, setStorePlusProxy);
   registerBGFun(requestFunKeys.debounceRemoveRules, debounceRemoveRules);
-  registerBGFun(requestFunKeys.getSessionCloseHistory, getSessionCloseHistory);
+  registerBGFun(requestFunKeys.getSessionCloseNumber, getSessionCloseNumber);
 }
 
 export { register };

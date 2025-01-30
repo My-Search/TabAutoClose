@@ -13,7 +13,7 @@ type Config = {
 
 type RegisterBGSType = {
   debounceRefreshState: () => void;
-  getSessionCloseHistory: () => chrome.tabs.Tab[];
+  getSessionCloseNumber: () => Promise<number>;
 };
 
 export type { Config, RegisterBGSType };
