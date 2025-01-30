@@ -14,6 +14,7 @@ function register({
   // -- 防抖方式删除规则-让前台调用--
   const waitRemoveRules: string[] = [];
   async function removeRulesCore() {
+    console.log("删除规则核心方法");
     const config = await $store.common.getConfig();
     // 倒数据
     const _waitRemoveRules: string[] = [];
@@ -24,20 +25,23 @@ function register({
       (item) => !_waitRemoveRules.includes(item)
     );
     // 保存修改扣的config配置
-    await $store.common.saveConfig(config);
+    console.log("开始保存配置！！！");
+    // 这里不能直接调用saveConfig,只能是渲染层来调用
+    await $store.common.notCommissionedSaveConfig(config);
     // 重新刷新tab状态
     debounceRefreshState();
     // 删除通知更新列表-暂无需实现（仅保存时需要）
   }
   const refreshDebounceRemoveRules = debounce(removeRulesCore, 1000);
   function debounceRemoveRules(rule: string) {
+    console.log("接收到防止删除规则");
     if (rule == null || rule.trim() === "") return;
     waitRemoveRules.push(rule.trim());
     refreshDebounceRemoveRules();
   }
 
   // 将bg-call-server:server中注册处理方法,用来接收index.html->xxx.js调用
-  registerBGFun(requestFunKeys.setStorePlus, async (key, value) => {
+  async function setStorePlusProxy(key: string, value: any) {
     console.log("接收到，现在处理请求" + key);
     const result = await setStorePlus(key, value);
     // 如果是规则改变了那刷新tab状态
@@ -50,7 +54,8 @@ function register({
     // 修改后，让boneCache失效（为什么在这里设置，因为等bg保存完成，渲染进程可能已经关了，就无法发送失效通知了）
     boneCache.invalid(key);
     return result;
-  });
+  }
+  registerBGFun(requestFunKeys.setStorePlus, setStorePlusProxy);
   registerBGFun(requestFunKeys.debounceRemoveRules, debounceRemoveRules);
   registerBGFun(requestFunKeys.getSessionCloseHistory, getSessionCloseHistory);
 }

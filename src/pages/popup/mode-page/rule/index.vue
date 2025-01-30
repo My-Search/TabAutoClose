@@ -3,11 +3,13 @@ import { onMounted, ref } from 'vue';
 import $store from '@/store';
 import {debounce} from '@/utils/utils';
 import {importRules,exportAsFile} from '@/utils/import-export';
+import boneCache from '@/store/lib/bone-cache';
+import { callBGFun } from '@/utils/BGServerRegister';
 const defaultConfig = $store.common.defaultConfig
 
 const page = ref({
     num: 1,
-    size: 30,
+    size: 100,
     total: 0,
     maxPageNum: 0,
     isShowSearch: false,
@@ -21,7 +23,6 @@ const page = ref({
     },
     async refreshList() {
         let rules = await $store.common.rules();
-        console.log("删除后查",rules)
         // 应用keyword
         if (this.keyword.length > 0) {
             rules = rules.filter(_rule => _rule.includes(this.keyword));
@@ -43,7 +44,16 @@ const page = ref({
         page.value.refreshList();
     }
 })
+
+
 const isLoaded = ref(false);
+const isImporting =ref(false);
+boneCache.listenerChange($store.common.cacheKeys.CONFIG_KEY, () => {
+    console.log('监听到缓存数据已经改变，现在刷新页面数据')
+    page.value.refreshList();
+    // 导入完成后，回显刷新
+    isImporting.value = false;
+});
 const form = ref({
     rule: '',
     secureCount: 0,
@@ -55,18 +65,17 @@ const form = ref({
         // 获取配置
         const config = await $store.common.getConfig();
         const _TCConfig = config.TC_CONFIG;
-        this.rule = `${this.rule}`.trim();
-        const rules = _TCConfig.retentionRules = _TCConfig.retentionRules.filter(_rule => _rule !== this.rule);
-        if(this.rule.length > 0) rules.unshift(this.rule);
+        const addedRule = this.rule = `${this.rule}`.trim();
+        // 本地规则列表数据立即同步
+        const rules = page.value.list = _TCConfig.retentionRules = _TCConfig.retentionRules.filter(_rule => _rule !== this.rule);
+        if(this.rule.length > 0) rules.unshift(addedRule);
+        // 添加其它配置到config
         this.secureCount = (_TCConfig.secureCount = this.secureCount >= 0 ? this.secureCount : defaultConfig.TC_CONFIG.secureCount);
         this.delayed = (_TCConfig.delayed = this.delayed >= 0 ? this.delayed : defaultConfig.TC_CONFIG.delayed);
         // 通过调用后台方法，防止前台关闭导致添加失败
-        const responseData = await $store.common.saveConfig(config);
-        console.log('responseData',responseData)
-        if(! responseData) alert('保存失败了')
+        $store.common.saveConfig(config);
         // 重置-刷新
         form.value.rule = '';
-        page.value.resetPage();
     },
     // 回显刷新
     async feedbackRefresh() {
@@ -78,11 +87,8 @@ const form = ref({
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const rules = ref({
     async del(rule:string) {
-        let rules = await $store.common.rules();
-        rules = rules.filter(_rule => _rule !== rule);
-        await $store.common.saveRules(rules);
-        console.log('删除成功',page.value.list)
-        page.value.resetPage();
+        page.value.list = page.value.list.filter(_rule => _rule !== rule);
+        callBGFun($store.BGS.requestFunKeys.debounceRemoveRules, [rule]);
     },
     chooseFile() {
         fileInputRef.value?.click();
@@ -90,19 +96,26 @@ const rules = ref({
     import: async (event: Event) => {
         // 触发选择文件，并使用importRules函数导入
         const selectedFiles = Array.from((event.target as HTMLInputElement)?.files || []);
-        await importRules(selectedFiles);
-        page.value.resetPage();
+        importRules(selectedFiles);
+        isImporting.value = true;
+        // 这里导入成功后会自动触发刷新渲染程序，无法自己刷新
+        // page.value.resetPage();
     },
     export: async () => {
         // 将规则导出为文件，通过调用exportRulesAsFile函数
         const rules = await $store.common.rules();
         exportAsFile(JSON.stringify(rules),`TabAutoClose插件导出的规则-${rules.length}条.json`);
+    },
+    exportOldData: async () => {
+        // 将规则导出为文件，通过调用exportRulesAsFile函数
+        const rules = await $store.common.oldRules();
+        exportAsFile(JSON.stringify(rules),`TabAutoClose插件旧规则导出-${rules.length}条.json`);
     }
 })
 
 const containerRef = ref<HTMLElement | null>(null);
 
-const debounceRefreshNextPage = debounce(() => page.value.nextPage(), 200);
+const debounceRefreshNextPage = debounce(() => page.value.nextPage(), 100);
 // 列表滚动事件
 const handleScroll = () => {
     console.log('滚动事件');
@@ -151,11 +164,11 @@ onMounted(async () => {
         </div>
         <input type="file" id="fileInput" style="display: none;" ref="fileInputRef" @change="rules.import" />
         <div class="rule-info">
-            <p id="msg">满足以下规则(<span class="ruleCount">{{ page.total }}</span>条)，将自动清理！
-            </p>
+            <p id="msg">自动清理规则(<span class="ruleCount">{{ page.total }}</span>条)</p>
             <p class="operation">
                 <span id="search-rule" title="规则搜索" @click="page.isShowSearch = !page.isShowSearch">查找</span> | <span id="import" title="去重导入" @click="rules.chooseFile()">导入</span> | <span
-                    id="export" title="将所有规则导出" @click="rules.export()">导出</span>
+                    id="export" title="将所有规则导出" @click="rules.export()">导出</span> | <span
+                    id="export" title="将所有旧规则导出" @click="rules.exportOldData()">找回旧数据</span>
             </p>
         </div>
         <div id="search" v-if="page.isShowSearch">
@@ -164,6 +177,7 @@ onMounted(async () => {
         </div>
 
         <div id="show" @scroll="handleScroll" ref="containerRef">
+            <p  class="importing" v-if="isImporting">规则正在后台导入中...</p>
             <p class='item' v-for="rule in page.list">
                 <span class="rule">{{ rule }}</span>
                 <span @click="rules.del(rule)" class="del-btn">x</span>
@@ -213,7 +227,6 @@ onMounted(async () => {
     display: flex;
     align-items: stretch;
     justify-content: space-around;
-    font-weight: 700;
 }
 
 .input-desc {
@@ -275,7 +288,13 @@ onMounted(async () => {
         text-align: center;
         font-size: 12px;
     }
-
+    .importing {
+        width: 100%;
+        text-align: center;
+        font-size: 12px;
+        margin: 0 0 5px 0;
+        color: #8b1616;
+    }
     .completed {
         width: 100%;
         text-align: center;

@@ -41,6 +41,8 @@ onMounted(async () => {
     selectMode('history')
   }
 })
+
+
 </script>
 
 <template>
@@ -71,7 +73,7 @@ onMounted(async () => {
 
 <style scoped lang="scss">
 #popup-page::before {
-    background: url('@/assets/image/leaf.webp') no-repeat;
+    background: url('@/assets/images/leaf-end.webp') no-repeat;
     background-size: cover;
     background-repeat: repeat-x;
     position: absolute;
@@ -79,10 +81,10 @@ onMounted(async () => {
     right: 0;
     bottom: 0;
     left: 0;
-    filter: blur(2px);
+    filter: blur(3px);
     content: "";
     z-index: -100;
-    opacity: 0.2;
+    opacity: 0.4;
 }
 
 .mode-select {

@@ -11,6 +11,7 @@ import {
 import { exportAsFile } from "@/utils/import-export";
 import $store from "@/store";
 import { type Config } from "@/types";
+import boneCache from "@/store/lib/bone-cache";
 
 // 旧数据删除
 async function removeOldConfig() {
@@ -24,13 +25,14 @@ async function removeOldConfig() {
   await setStore("MigrationStatus_v1", 1);
 }
 async function oldConfigAdapterHandler() {
-  console.log("旧配置迁移开始");
   // 检测是否已经迁移完成
   const migrationStatus = await getLocalStore("MigrationStatus_v1");
   if (migrationStatus === 1) {
+    console.log("旧数据已迁移！");
     // 说明本浏览器已经完成了迁移
     return;
   }
+  console.log("旧配置迁移开始");
   // 需要进行数据迁移检测（如果有旧数据）
   const config: Config = $store.common.defaultConfig;
   // 导出规则为文件
@@ -44,8 +46,10 @@ async function oldConfigAdapterHandler() {
     // 无旧数据，退出数据迁移程序
     await setLocalStore("MigrationStatus_v1", 1);
     // removeOldConfig(); 后期版本等用户迁移完成打开
+    console.log("无旧配置，退出数据迁移程序");
     return;
   }
+  console.log("存在旧配置，开始数据迁移");
 
   // 存在旧数据 & 未迁移 （准备需要进行数据迁移）
   // 进行双重备份
@@ -72,8 +76,12 @@ async function oldConfigAdapterHandler() {
     console.log("数据迁移新数据结构失败！");
     return;
   }
+  console.log(
+    "数据迁移新数据结构成功！需要通知前端刷新列表，现在让缓存配置失败！"
+  );
   setLocalStore("MigrationStatus_v1", 1);
   console.log("数据迁移完成！");
+  boneCache.invalid($store.common.cacheKeys.CONFIG_KEY);
   // removeOldConfig(); 后期版本等用户迁移完成打开
 }
 

@@ -38,7 +38,9 @@ function notifyChangeListener(change: { [key: string]: any }) {
     if (change.hasOwnProperty(key)) {
       const fellowTraveler = listener[key];
       if (fellowTraveler) {
+        printLog("正在通知监听者", key, change[key]);
         fellowTraveler.forEach((fun: (value: any) => void) => {
+          printLog("调用-监听者函数", key, change[key]);
           fun(change[key]);
         });
       }
@@ -46,10 +48,18 @@ function notifyChangeListener(change: { [key: string]: any }) {
   }
 }
 function notifyChange(change: { [key: string]: any }) {
+  // 如果value值为null设置为无效值
+  for (const key in change) {
+    if (change.hasOwnProperty(key)) {
+      if (change[key] == null) {
+        change[key] = consts.INVALID_FLAG;
+      }
+    }
+  }
   printLog("发送缓存数据改变通知", change);
   // 本地立即可见
   pushLocalCache(change);
-  // 发送消息给全员
+  // 发送消息给其它成员
   chrome.runtime.sendMessage({ type: consts.MESSAGE_TYPE, change });
 }
 // 监听改变
@@ -74,8 +84,10 @@ function onChange() {
 }
 onChange();
 function setCache(key: string, value: any) {
+  if (key == null || value == null) {
+    return;
+  }
   localCache[key] = value;
-  // 发送消息给主进程
   notifyChange({ [key]: value });
 }
 function getCache(key: string): any {

@@ -4,6 +4,9 @@ import {
   getStorePlus,
   removeStorePlus,
   removeStore,
+  setLocalStore,
+  getLocalStore,
+  setStorePlus,
 } from "@/store/lib/store";
 import { type Config } from "@/types";
 import { callBGFun } from "@/utils/BGServerRegister";
@@ -11,6 +14,7 @@ import { callBGFun } from "@/utils/BGServerRegister";
 import BGS from "@/store/module/BGS";
 import event from "@/store/module/event";
 import boneCache from "./lib/bone-cache";
+import { ref } from "vue";
 
 const common = {
   // 常量keys
@@ -44,6 +48,13 @@ const common = {
       config,
     ]);
   },
+  async notCommissionedSaveConfig(config: Config) {
+    // 保存(保存都使用委托主进程来保存)
+    const result = await setStorePlus(this.cacheKeys.CONFIG_KEY, config);
+    // 需要在此让缓存无效
+    boneCache.invalid(this.cacheKeys.CONFIG_KEY);
+    return result;
+  },
   // 获取配置
   async getConfig(isReadCache = true): Promise<Config> {
     let cacheValue = boneCache.getCache(this.cacheKeys.CONFIG_KEY);
@@ -55,6 +66,17 @@ const common = {
       (cacheValue = await getStorePlus(this.cacheKeys.CONFIG_KEY))
     );
     return cacheValue ?? this.defaultConfig;
+  },
+  async oldRules(): Promise<string[]> {
+    let oldConfig = await getStorePlus("tc_config");
+    if (oldConfig == null || oldConfig?.retentionRules == null) {
+      // 尝试从迁移中间备份产物中获取
+      oldConfig = getLocalStore("oldConfig");
+    }
+    if (oldConfig == null || oldConfig?.retentionRules == null) {
+      alert("旧数据不存在！");
+    }
+    return oldConfig?.retentionRules;
   },
   // 获取自动关闭配置的规则
   async rules(): Promise<string[]> {

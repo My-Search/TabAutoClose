@@ -41,13 +41,32 @@ function matchUrlPromise(
 let closeTimerOperator = {
   timers: {} as { [key: number]: NodeJS.Timeout },
   sessionCloseHistory: [] as chrome.tabs.Tab[],
-  addSessionCloseHistory(tab: chrome.tabs.Tab) {
-    this.sessionCloseHistory.push(tab);
-    chrome.action.setBadgeText({
-      text: `${this.sessionCloseHistory.length}`,
+  addSessionCloseHistory(tabId: number) {
+    const that = this;
+    return new Promise((resolve, reject) => {
+      chrome.tabs.get(tabId, async function (tab) {
+        if (chrome.runtime.lastError) {
+          console.error("Error getting tab:", chrome.runtime.lastError);
+          resolve(false);
+        }
+        try {
+          await $store.common.addHistory({
+            url: tab.url,
+            title: that.clearTitleTime(tab.title!),
+            favIconUrl: tab.favIconUrl,
+          } as chrome.tabs.Tab);
+          that.sessionCloseHistory.push(tab);
+          chrome.action.setBadgeText({
+            text: `${that.sessionCloseHistory.length}`,
+          });
+          chrome.action.setBadgeBackgroundColor({ color: "#259646" });
+          chrome.action.setBadgeTextColor({ color: "#F0F0F0" });
+        } catch (error) {
+          resolve(false);
+        }
+        resolve(true);
+      });
     });
-    chrome.action.setBadgeBackgroundColor({ color: "#259646" });
-    chrome.action.setBadgeTextColor({ color: "#F0F0F0" });
   },
   getSessionCloseHistory() {
     return this.sessionCloseHistory;
@@ -80,23 +99,12 @@ let closeTimerOperator = {
       // 剩余时间改变动态显示
       setRemainder(--waitTime!);
       // 关闭标签的定时器
-      if (waitTime! <= 0) {
+      if (waitTime <= 0) {
         clearInterval(that.timers[tabId]);
         delete that.timers[tabId];
-        chrome.tabs.get(tabId, async function (tab) {
-          if (chrome.runtime.lastError) {
-            console.error("Error getting tab:", chrome.runtime.lastError);
-            return;
-          }
-          console.log("添加到历史 ", that.clearTitleTime(tab.title!));
-          await $store.common.addHistory({
-            url: tab.url,
-            title: that.clearTitleTime(tab.title!),
-            favIconUrl: tab.favIconUrl,
-          } as chrome.tabs.Tab);
-          that.addSessionCloseHistory(tab);
-          chrome.tabs.remove(tabId);
-        });
+        await that.addSessionCloseHistory(tabId);
+        console.log("删除标签");
+        chrome.tabs.remove(tabId);
       }
     }, 1000);
   },

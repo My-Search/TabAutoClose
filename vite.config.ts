@@ -20,6 +20,7 @@ export default defineConfig({
     }),
   ],
   build: {
+    sourcemap: true, // 生成sourceMap文件，方便调试
     rollupOptions: {
       input: {
         welcome: "src/pages/welcome/index.html",
