@@ -7,7 +7,6 @@ function importRules(files: File[] | null) {
     if (!files || files.length === 0) {
       return false;
     }
-
     const fileReader = new FileReader();
 
     fileReader.onload = async function (e: ProgressEvent<FileReader>) {

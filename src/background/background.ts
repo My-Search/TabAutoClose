@@ -77,7 +77,7 @@ let closeTimerOperator = {
           chrome.action.setBadgeText({
             text: `${await that.plusOneSessionCloseNumber()}`,
           });
-          chrome.action.setBadgeBackgroundColor({ color: "#259646" });
+          chrome.action.setBadgeBackgroundColor({ color: "#A0A0A0" });
           chrome.action.setBadgeTextColor({ color: "#F0F0F0" });
         } catch (error) {
           resolve(false);
@@ -110,15 +110,15 @@ let closeTimerOperator = {
     }
     // 初始设置剩余时间
     setRemainder(waitTime);
-    this.timers[tabId] = setInterval(() => {
+    this.timers[tabId] = setInterval(async () => {
       // 剩余时间改变动态显示
       setRemainder(--waitTime!);
       // 关闭标签的定时器
       if (waitTime <= 0) {
         clearInterval(that.timers[tabId]);
-        chrome.tabs.remove(tabId);
         delete that.timers[tabId];
-        that.onTabClose(tabId);
+        await that.onTabClose(tabId);
+        chrome.tabs.remove(tabId);
       }
     }, 1000);
   },

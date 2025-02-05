@@ -101,20 +101,24 @@ const common = {
   },
   // 获取历史记录
   async getHistory(): Promise<chrome.tabs.Tab[]> {
-    return (await getStore(this.cacheKeys.HISTORY_KEY)) || [];
+    // 含兼容代码
+    const [cloud = [], local = []] = await Promise.all([
+      getStore(this.cacheKeys.HISTORY_KEY),
+      getLocalStore(this.cacheKeys.HISTORY_KEY),
+    ]);
+    return [...cloud, ...local];
   },
   // 添加历史记录
   async addHistory(tab: chrome.tabs.Tab) {
     let history = await this.getHistory();
+    // 不使用云存储-淘汰
+    await removeStore(this.cacheKeys.HISTORY_KEY);
     // 过滤重复记录再添加
     const config = await this.getConfig();
     history = history.filter((item) => item.url !== tab.url);
-    if (history.length >= config.HISTORY_CONFIG.maxCount) {
-      history.pop();
-    }
-    // 只保存部分tab属性
     history.unshift(tab);
-    return await setStore(this.cacheKeys.HISTORY_KEY, history);
+    history = history.splice(0, config.HISTORY_CONFIG.maxCount);
+    return await setLocalStore(this.cacheKeys.HISTORY_KEY, history);
   },
 };
 
