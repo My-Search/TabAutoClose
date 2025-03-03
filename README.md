@@ -16,7 +16,6 @@ TabAutoClose是Chrome插件，基于用户指定的规则清理标签，标签�
 3、标签清理后可查看清理记录，插件icon右下角也会显示当前session清理的标签数。
 
 **效果：**
-![PixPin_2025-01-28_22-23-08](https://github.com/user-attachments/assets/41e31396-2bdb-4ed6-9b64-3e566f0fbb88)
 ![PixPin_2025-01-28_22-28-40](https://github.com/user-attachments/assets/1f31ccf1-0e8d-4584-b26a-00d331d219e3)
 ![PixPin_2025-01-28_22-24-48](https://github.com/user-attachments/assets/ed0cabfb-ec5e-4bee-9f28-214a5270cb47)
 
