@@ -17,6 +17,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "src/content/content.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "src/content/content.ts","src/content/inject-script.js", "src/content/_common/ChannelListener.ts"],
   "exclude": ["node_modules"]
 }

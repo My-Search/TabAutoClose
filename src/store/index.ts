@@ -11,10 +11,10 @@ import {
 import { type Config } from "@/types";
 import { callBGFun } from "@/utils/BGServerRegister";
 // 导入子模块store-注册
-import BGS from "@/store/module/BGS";
 import event from "@/store/module/event";
 import boneCache from "./lib/bone-cache";
 import { ref } from "vue";
+import FunApi from "@/background/controller/FunApi";
 
 const common = {
   // 常量keys
@@ -27,10 +27,12 @@ const common = {
   defaultConfig: {
     TC_CONFIG: {
       retentionRules: [
-        "www.baidu.com",
-        "www.google.com",
+        "^(szfilehelper.weixin(白名单写法)?)",
+        "https?:\/\/[^\/]+$",
         "/search(\\?.*)?$",
         "/history(\\?.*)?$",
+        "www.baidu.com",
+        "www.google.com",
       ],
       secureCount: 3,
       delayed: 60,
@@ -43,7 +45,7 @@ const common = {
   // 保存配置
   async saveConfig(config: Config) {
     // 保存(保存都使用委托主进程来保存)
-    return await callBGFun(BGS.requestFunKeys.setStorePlus, [
+    return await callBGFun(FunApi.setStorePlus, [
       this.cacheKeys.CONFIG_KEY,
       config,
     ]);
@@ -66,17 +68,6 @@ const common = {
       (cacheValue = await getStorePlus(this.cacheKeys.CONFIG_KEY))
     );
     return cacheValue ?? this.defaultConfig;
-  },
-  async oldRules(): Promise<string[]> {
-    let oldConfig = await getStorePlus("tc_config");
-    if (oldConfig == null || oldConfig?.retentionRules == null) {
-      // 尝试从迁移中间备份产物中获取
-      oldConfig = getLocalStore("oldConfig");
-    }
-    if (oldConfig == null || oldConfig?.retentionRules == null) {
-      alert("旧数据不存在！");
-    }
-    return oldConfig?.retentionRules;
   },
   // 获取自动关闭配置的规则
   async rules(): Promise<string[]> {
@@ -122,4 +113,4 @@ const common = {
   },
 };
 
-export default { common, BGS, event };
+export default { common, event };

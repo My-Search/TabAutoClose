@@ -3,11 +3,14 @@ import { ref,onMounted } from 'vue';
 import { defineAsyncComponent } from 'vue';
 import Button from '@/components/button/index.vue';
 import {callBGFun} from '@/utils/BGServerRegister'
-import $store from '@/store'
+import FunApi from '@/background/controller/FunApi';
+
+import { useI18n } from 'vue-i18n';
+const { t, locale } = useI18n();
 
 const modules = [
-  { name: 'rule', label: '规则管理' , icon: 'set',  isQuickly: true, default: true },
-  { name: 'history', label: '清理记录', icon: 'history', isQuickly: true },
+  { name: 'rule', label: t('settings.title') , icon: 'set',  isQuickly: true, default: true },
+  { name: 'history', label: t('history.title'), icon: 'history', isQuickly: true },
 ];
 
 function findDefaultModule() {
@@ -40,13 +43,8 @@ onMounted(async () => {
   //   // 你可以在这里使用 text 的值
   //   if(text) selectMode('history');
   // });
-  console.log('渲染程序准备获取sessionCloseHistory')
-  const sessionCloseNumber = await callBGFun($store.BGS.requestFunKeys.getSessionCloseNumber);
-  console.log("渲染程序获取到的sessionCloseHistory=",sessionCloseNumber);
-  if(sessionCloseNumber > 0) {
-    console.log('打开的是历史页')
-    selectMode('history')
-  }
+  const sessionCloseNumber = await callBGFun(FunApi.getSessionCloseNumber);
+  if(sessionCloseNumber > 0) selectMode('history')
 })
 
 
@@ -66,7 +64,7 @@ onMounted(async () => {
       <view class="mode-view-header">
         <span class="title">{{ moduleOf(currentMode)?.label }}</span>
         <div class="menus">
-          <template v-for="quickly of modules.filter(e => e.isQuickly)">
+          <template v-for="quickly of modules.filter((e: any) => e.isQuickly)">
             <SvgIcon :name="quickly.icon" color="#666666" @click="selectMode(quickly.name)" v-if="currentMode !== quickly.name"></SvgIcon>
           </template>
           <!-- <SvgIcon name="home"  @click="currentMode = null" width="20px"></SvgIcon> -->

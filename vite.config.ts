@@ -25,14 +25,7 @@ export default defineConfig({
       input: {
         welcome: "src/pages/welcome/index.html",
         popup: "src/pages/popup/index.html",
-      },
-    },
-  },
-  server: {
-    port: 5173,
-    strictPort: true,
-    hmr: {
-      port: 5173,
+      }
     },
   },
   // 为了在项目中使用@别名
@@ -42,6 +35,10 @@ export default defineConfig({
         find: "@",
         replacement: resolve(__dirname, "./src"),
       },
+      {
+        find: 'vue-i18n',
+        replacement: 'vue-i18n/dist/vue-i18n.runtime.esm-bundler.js'
+      }
     ],
   },
   // sass依赖的配置，为了在vue中使用scss

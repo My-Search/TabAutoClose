@@ -23,4 +23,17 @@ export default <ManifestV3Export>{
     service_worker: "src/background/background.ts",
   },
   host_permissions: ["<all_urls>"],
+  content_scripts: [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/content.ts"],
+      "run_at": "document_idle"
+    }
+  ],
+  web_accessible_resources: [
+    {
+      "resources": ["src/content/inject-script.js", "src/content/_common/ChannelListener.js"], // 可以通过访问 chrome-extension://ihhdibalainnihliijmcandokboiagfp/src/content/inject-script.js
+      "matches": ["<all_urls>"]
+    }
+  ]
 };

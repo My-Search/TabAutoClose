@@ -5,6 +5,12 @@ import {debounce} from '@/utils/utils';
 import {importRules,exportAsFile} from '@/utils/import-export';
 import boneCache from '@/store/lib/bone-cache';
 import { callBGFun } from '@/utils/BGServerRegister';
+import FunApi from '@/background/controller/FunApi';
+import { useI18n } from 'vue-i18n';
+
+const i18n = useI18n();
+const t = (i: string) => i18n.t(`settings.${i}`)
+
 const defaultConfig = $store.common.defaultConfig
 
 const page = ref({
@@ -60,7 +66,7 @@ const form = ref({
     delayed: 0,
     async saveFormData() {
         if(! isLoaded) {
-            alert('页面数据未加载完成！')
+            alert(t('notReadyAlert'));
         }
         // 获取配置
         const config = await $store.common.getConfig();
@@ -88,7 +94,7 @@ const fileInputRef = ref<HTMLInputElement | null>(null);
 const rules = ref({
     async del(rule:string) {
         page.value.list = page.value.list.filter(_rule => _rule !== rule);
-        callBGFun($store.BGS.requestFunKeys.debounceRemoveRules, [rule]);
+        callBGFun(FunApi.debounceRemoveRules, [rule]);
     },
     chooseFile() {
         fileInputRef.value?.click();
@@ -104,12 +110,7 @@ const rules = ref({
     export: async () => {
         // 将规则导出为文件，通过调用exportRulesAsFile函数
         const rules = await $store.common.rules();
-        exportAsFile(JSON.stringify(rules),`TabAutoClose插件导出的规则-${rules.length}条.json`);
-    },
-    exportOldData: async () => {
-        // 将规则导出为文件，通过调用exportRulesAsFile函数
-        const rules = await $store.common.oldRules();
-        exportAsFile(JSON.stringify(rules),`TabAutoClose插件旧规则导出-${rules.length}条.json`);
+        exportAsFile(JSON.stringify(rules),`${t('pluginExportRuleFileNamePrefix')}-${rules.length}${t('articles')}.json`);
     }
 })
 
@@ -144,46 +145,45 @@ onMounted(async () => {
     <div class="page">
         <div id="controllor">
             <div class="config-item">
-                <input type="text" id="rule" placeholder="输入规则..." v-model="form.rule" @keydown.enter="form.saveFormData()" />
+                <input type="text" id="rule" :placeholder="t('inputRule')" v-model="form.rule" @keydown.enter="form.saveFormData()" />
                 <div>
-                    <button id="push" class="custom-button" @click="form.saveFormData()">添加规则</button>
+                    <button id="push" class="custom-button" @click="form.saveFormData()">{{ t('addRule') }}</button>
                 </div>
             </div>
             <div class="config-item">
-                <input type="number" id="secure-range" placeholder="请输入保护前tab个数" v-model="form.secureCount" @blur="form.saveFormData()" />
+                <input type="number" id="secure-range" :placeholder="t('protectTabCountInputPlaceholder')" v-model="form.secureCount" @blur="form.saveFormData()" />
                 <div class="input-desc">
-                    保护前Tab数
+                    {{ t('protectTabCount') }}
                 </div>
             </div>
             <div class="config-item">
-                <input type="number" id="delayed" placeholder="延时关闭时间" title="保护活跃标签前面tab个数" v-model="form.delayed" @blur="form.saveFormData()" />
+                <input type="number" id="delayed" :placeholder="t('delayCloseInputPlaceholder')" v-model="form.delayed" @blur="form.saveFormData()" />
                 <div class="input-desc">
-                    延时关闭(秒)
+                    {{ t('delayClose') }}
                 </div>
             </div>
         </div>
         <input type="file" id="fileInput" style="display: none;" ref="fileInputRef" @change="rules.import" />
         <div class="rule-info">
-            <p id="msg">自动清理规则(<span class="ruleCount">{{ page.total }}</span>条)</p>
+            <p id="msg">{{ t('autoCleanRules') }}(<span class="ruleCount">{{ page.total }}</span> {{ t('articles') }})</p>
             <p class="operation">
-                <span id="search-rule" title="规则搜索" @click="page.isShowSearch = !page.isShowSearch">查找</span> | <span id="import" title="去重导入" @click="rules.chooseFile()">导入</span> | <span
-                    id="export" title="将所有规则导出" @click="rules.export()">导出</span> | <span
-                    id="export" title="将所有旧规则导出" @click="rules.exportOldData()">找回旧数据</span>
+                <span id="search-rule" :title="t('findTitle')" @click="page.isShowSearch = !page.isShowSearch">{{ t('find') }}</span> | <span id="import" :title="t('importTitle')" @click="rules.chooseFile()">{{ t('import') }}</span> | <span
+                    id="export" :title="t('exportTitle')" @click="rules.export()">{{ t('export') }}</span>
             </p>
         </div>
         <div id="search" v-if="page.isShowSearch">
-            <input class="search-input" placeholder="请输入规则的查找关键字" @blur="page.closeSearch()" v-model="page.keyword" @keydown.enter="page.resetPage()" />
-            <span class="search-btn" @click="page.resetPage()">搜索</span>
+            <input class="search-input" :placeholder="t('searchPlaceholder')" @blur="page.closeSearch()" v-model="page.keyword" @keydown.enter="page.resetPage()" />
+            <span class="search-btn" @click="page.resetPage()">{{ t('search') }}</span>
         </div>
 
         <div id="show" @scroll="handleScroll" ref="containerRef">
-            <p  class="importing" v-if="isImporting">规则正在后台导入中...</p>
+            <p  class="importing" v-if="isImporting">{{ t('importing') }}</p>
             <p class='item' v-for="rule in page.list">
                 <span class="rule">{{ rule }}</span>
                 <span @click="rules.del(rule)" class="del-btn">x</span>
             </p>
             <p class='completed'>
-                {{ page.num >= Math.ceil(page.total/page.size)?'全部加载完了！':'正在努力加载中...' }} ({{ page.num }}/{{ page.maxPageNum }})
+                {{ page.num >= Math.ceil(page.total/page.size)?t('allLoaded'):t('loading') }} ({{ page.num }}/{{ page.maxPageNum }})
             </p>
         </div>
     </div>
@@ -219,11 +219,13 @@ onMounted(async () => {
 }
 
 .config-item>*:nth-child(1) {
-    width: 67%;
+    width: 55%;
+    flex-shrink: 0;
+    flex-grow: 0;
 }
 
 .config-item>*:nth-child(2) {
-    width: 33%;
+    flex-grow: 1;
     display: flex;
     align-items: stretch;
     justify-content: space-around;
