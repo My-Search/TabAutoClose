@@ -28,7 +28,6 @@ const common = {
     TC_CONFIG: {
       retentionRules: [
         "^(szfilehelper.weixin(白名单写法)?)",
-        "https?:\/\/[^\/]+$",
         "/search(\\?.*)?$",
         "/history(\\?.*)?$",
         "www.baidu.com",
