@@ -3,7 +3,7 @@ import type { ManifestV3Export } from "@crxjs/vite-plugin";
 export default <ManifestV3Export>{
   manifest_version: 3,
   name: "TabAutoClose",
-  version: "3.5.0",
+  version: "3.6.0",
   description: "清理用户指定可清理的标签",
   author: {
     email: "2119299531@qq.com",
